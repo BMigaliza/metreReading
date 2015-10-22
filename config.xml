@@ -13,7 +13,10 @@
 			Beatrice Migaliza
 		</author>
 		
-		
+		<gap:plugin name="cordova-plugin-whitelist" source="npm" />
+		<allow-navigation href="data:*" />
+		<allow-intent href="*" />
+		<access origin="*" />
 		<gap:plugin name="com.phonegap.plugins.barcodescanner" version="2.2.0" />
 	</widget>
 	
