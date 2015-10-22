@@ -10,76 +10,154 @@
 		<script src="js/jquery.mobile-1.4.5.min.js"></script>
 		<script src="phonegap.js"></script>
 		<script>
+		function sendRequest(u){
+			//alert(u);
+				var obj=$.ajax({url:u,async:false});
+				var result=$.parseJSON(obj.responseText);
+				return result;
+			}
+
 		$(function(){
 			$("#datepicker").datepicker({
 				dateFormat:"yy-mm-dd"
 			});
 		});
-		
+
 		function scanBarcode(){
 				cordova.plugins.barcodeScanner.scan(
 					function (result) {
 					$("#captured").val(result.text)
-					}, 
+					},
 					function (error) {
 						alert("Scanning failed: " + error);
 					}
 				);
 			}
-			
-			function submitData(){
-				$("#submitData").submit(function(ev){
-					ev.preventDefault();
-					var read = $("#reading").val();
-					var capture = $("#captured").val();
-					var dateVal = $("#datepicker").val();
-					var loc = $("#location").val();
-					var stringVal = "reading="+read+"&captured="+capture+"&date="+dateVal+"&location="+loc;
-					//$("#trial").text(stringVal);
 
-					$.ajax({
-						type: 'POST',
-						url:"insert.php",
-						data: stringVal,
-						success:function(data){
-						$('#message').html("Successfully added");
-						 }
+		function saveToDataBase(){
+			$("#submitData").submit(function(ev){
+				ev.preventDefault();
+					var read = $("#reading").val();
+					var capture = $("#capturedd").val();
+					var dateVal = $("#datepicker").val();
+					var loc = $("#locationn").val();
+					var stringVal = "reading="+read+"&capturedd="+capture+"&datepicker="+dateVal+"&locationn="+loc;
+					var theUrl ="request.php?cmd=1&"+stringVal;
+					var obj = sendRequest(theUrl);
+					if(obj.result==1)
+					{
+						$('#showMessage').text(obj.message);
+						$('#showMessage').show();
+					}
+					else
+					{
+						$('#showMessage').text("Error adding");
+						$('#showMessage').css("backgroundColor","red");
+					}
+
 					});
-					
+
+				}
+				/*move to the nnext page*/
+				function navigateView() {
+    			if (condition) {
+        $.mobile.changePage("#pagetwo");
+    	}
+		}
+
+		/*move to the nnext page*/
+		function navigateHome() {
+			if (condition) {
+				$.mobile.changePage("#pageone");
+		}
+	}
+		$(document).on("pagecreate","#pagetwo",function(){
+		//alert("ready");
+		var theUrl = "request.php?cmd=2";
+
+			var obj=sendRequest(theUrl);
+			//alert(obj);
+			//alert("ready");
+			//alert(obj.result);
+			if(obj.result==1){
+			//alert(obj.values[0]["Date"]);
+			var list="";
+
+			$.each(obj.values,function(i,Date){
+				list+='<li> <a href="#" id=""'+i+'class="details">'+obj.values[i]["Date"]+'</a></li>';
+			});
+			$("#datavalues").append(list).promise().done(function(){
+				$(this).on("click",".details",function(e){
+					e.preventDefault();
+					$("#details-page").data("values",values[this]);
+					$.mobile.change("details-page")
 				});
+				$(this).listview().listview("refresh");
+			});
 			}
+		});
 		</script>
 	</head>
 		<body>
-		
-			<!--page content-->
+
+			<!--index page-->
 			<div data-role="page" id="pageone">
 			<!--header-->
 				<div data-role="header" data-position="inline">
-					<a href="index.html"class="ui-btn ui-icon-home ui-btn-icon-left">Home</a>
+					<a href="#pageone"class="ui-btn ui-icon-home ui-btn-icon-left" onclick="navigateHome()">Home</a>
 					<h1> Metre Reading</h1>
-					<a href="view.html" class="ui-btn-right ui-btn ui-btn-inline ui-mini ui-corner-all ui-btn-icon-left ui-icon-grid">View</a>	
+					<a href="#pagetwo" class="ui-btn-right ui-btn ui-btn-inline ui-mini ui-corner-all ui-btn-icon-left ui-icon-grid" onclick="navigateView()">View</a>
 				</div>
-				
+
 			<!--content-->
 			<div data-role="main" class="ui-content">
 			<input type="button" value ="SCAN" id="btnScan" onclick="scanBarcode()">
-				<form method="POST" action="insert.php" id="submitData">
+				<form method="GET" action="insert.php" id="submitData">
 					<label for="Reading">Reading:</label>
 					<input type="text" name="reading" id="reading">
 					<label for="captured">Captured Value:</label>
-					<input type="text" name="captured" id="captured" >
+					<input type="text" name="captured" id="capturedd" >
 					<label for="date">Date: </label>
 					<input type="text"name="date" id="datepicker">
 					<label for="location">Location:</label>
-					<input type="text" name="location" id="location">
-					<input type="submit" value="Submit Button"  onclick="submitData()">
+					<input type="text" name="location" id="locationn">
+					<input type="submit" value="Submit Button"  onclick="saveToDataBase()">
 			</div>
-			
+
+			<!--view page-->
+			<div data-role="page" id="pagetwo">
+			<!--header-->
+				<div data-role="header" data-position="inline">
+					<a href="#pageone"class="ui-btn ui-icon-home ui-btn-icon-left">Home</a>
+					<h1> Metre Reading</h1>
+					<a href="#pagetwo" class="ui-btn-right ui-btn ui-btn-inline ui-mini ui-corner-all ui-btn-icon-left ui-icon-grid">View</a>
+				</div>
+
+            <!--content-->
+            <div role="main"class="ui-content">
+               <div data-role="collapsible">
+
+					<ul data-role="listview" id="datavalues"data-divider-theme="a" data-inset="true">
+						<li data-role="list-divider" data-theme="b" role="heading">Date</li>
+
+					</ul>
+				</div>
+
+            </div>
+			<!--second three -->
+			<div data-role="page" id="details-page">
+				<div data-role="header" data-theme="b"><a href="#" data-rel="back" data-role="button">Go back</a>
+
+					 <h1>Metre Details</h1>
+
+				</div>
+				<div data-role="content"></div>
+			</div>
+
 			<!--footer-->
-			<div data-role="footer">
+			<div data-role="footer" id="showMessage">
 				<h1 id="message">  </h1>
-				
+
 			</div>
 		</body>
 </html>
